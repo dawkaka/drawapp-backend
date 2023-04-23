@@ -69,11 +69,29 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 		defer conn.Close()
 
 		query := "INSERT INTO link (label, data) VALUES (?, ?)"
-		if _, err := conn.ExecContext(r.Context(), query, label, dataJSON); err != nil {
+		result, err := conn.ExecContext(r.Context(), query, label, dataJSON)
+		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
-		fmt.Fprintf(w, "Data saved successfully")
+
+		id, err := result.LastInsertId()
+		if err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+
+		response := map[string]int64{"insertedID": id}
+		jsonResponse, err := json.Marshal(response)
+		if err != nil {
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(jsonResponse)
+
 	case "GET":
 		id := r.URL.Query().Get("id")
 		if id == "" {
