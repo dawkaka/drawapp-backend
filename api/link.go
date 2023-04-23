@@ -26,6 +26,14 @@ func init() {
 
 func NewHandler(w http.ResponseWriter, r *http.Request) {
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == "OPTIONS" {
+		return
+	}
+
 	conn, err := db.Conn(r.Context())
 	if err != nil {
 		http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -65,7 +73,6 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
-
 		fmt.Fprintf(w, "Data saved successfully")
 	case "GET":
 		id := r.URL.Query().Get("id")
