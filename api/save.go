@@ -5,18 +5,38 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-func NewHandler(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open("mysql", os.Getenv("DSN"))
+var db *sql.DB
+
+func init() {
+	var err error
+	db, err = sql.Open("mysql", os.Getenv("DSN"))
 	if err != nil {
-		fmt.Fprintf(w, err.Error())
+		panic(err)
+	}
+
+	db.SetMaxOpenConns(10)                 // set maximum number of open connections
+	db.SetMaxIdleConns(5)                  // set maximum number of idle connections
+	db.SetConnMaxLifetime(time.Minute * 1) // set maximum connection lifetime
+}
+
+func NewHandler(w http.ResponseWriter, r *http.Request) {
+	// Get a connection from the pool
+	conn, err := db.Conn(r.Context())
+	if err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
-	defer db.Close()
-	if err := db.Ping(); err != nil {
-		fmt.Fprintf(w, "Ping error")
+	defer conn.Close()
+
+	if err := conn.PingContext(r.Context()); err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
+
 	fmt.Fprintf(w, "<h1>Connected!</h1>")
 }
