@@ -148,24 +148,17 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		label, ok := data["label"].(string)
-		if !ok || len(label) > 100 {
-			http.Error(w, "Invalid label", http.StatusBadRequest)
-			return
-		}
-
 		dataJSON, err := json.Marshal(data["data"])
 		if err != nil {
 			http.Error(w, "Invalid data", http.StatusBadRequest)
 			return
 		}
 
-		query := "UPDATE link SET label = ?, data = ?, updated_at = NOW() WHERE id = ?"
-		if _, err := conn.ExecContext(r.Context(), query, label, dataJSON, id); err != nil {
+		query := "UPDATE link SET  data = ?, updated_at = NOW() WHERE id = ?"
+		if _, err := conn.ExecContext(r.Context(), query, dataJSON, id); err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
-
 		fmt.Fprintf(w, "Data updated successfully")
 	case "DELETE":
 		id := r.URL.Query().Get("id")
