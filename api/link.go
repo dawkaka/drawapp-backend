@@ -9,6 +9,7 @@ import (
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/google/uuid"
 )
 
 var db *sql.DB
@@ -68,20 +69,22 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		defer conn.Close()
 
-		query := "INSERT INTO link (label, data) VALUES (?, ?)"
-		result, err := conn.ExecContext(r.Context(), query, label, dataJSON)
+		id := uuid.NewString()
+
+		query := "INSERT INTO link (linkdID, label, data) VALUES (?, ?, ?)"
+		result, err := conn.ExecContext(r.Context(), query, id, label, dataJSON)
 		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
-		id, err := result.LastInsertId()
+		_, err = result.LastInsertId()
 		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
-		response := map[string]int64{"insertedID": id}
+		response := map[string]string{"insertedID": id}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
@@ -108,7 +111,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 
 		var label string
 		var dataJSON []byte
-		query := "SELECT label, data FROM link WHERE id = ?"
+		query := "SELECT label, data FROM link WHERE linkdID = ?"
 		row := conn.QueryRowContext(r.Context(), query, id)
 		if err := row.Scan(&label, &dataJSON); err != nil {
 			if err == sql.ErrNoRows {
@@ -154,7 +157,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		query := "UPDATE link SET  data = ?, updated_at = NOW() WHERE id = ?"
+		query := "UPDATE link SET  data = ?, updated_at = NOW() WHERE linkID = ?"
 		if _, err := conn.ExecContext(r.Context(), query, dataJSON, id); err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
@@ -162,7 +165,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Data updated successfully")
 	case "DELETE":
 		id := r.URL.Query().Get("id")
-		query := "DELETE FROM link WHERE id = ?"
+		query := "DELETE FROM link WHERE linkID = ?"
 		if _, err := conn.ExecContext(r.Context(), query, id); err != nil {
 			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
