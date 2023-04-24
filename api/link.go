@@ -64,7 +64,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 
 		conn, err := db.Conn(r.Context())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 		defer conn.Close()
@@ -74,20 +74,20 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 		query := "INSERT INTO link (linkID, label, data) VALUES (?, ?, ?)"
 		result, err := conn.ExecContext(r.Context(), query, id, label, dataJSON)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
 		_, err = result.LastInsertId()
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
 		response := map[string]string{"insertedID": id}
 		jsonResponse, err := json.Marshal(response)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Something went wrong", http.StatusInternalServerError)
 			return
 		}
 
