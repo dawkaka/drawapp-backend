@@ -71,7 +71,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 
 		id := uuid.NewString()
 
-		query := "INSERT INTO link (linkdID, label, data) VALUES (?, ?, ?)"
+		query := "INSERT INTO link (linkID, label, data) VALUES (?, ?, ?)"
 		result, err := conn.ExecContext(r.Context(), query, id, label, dataJSON)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -111,7 +111,7 @@ func NewHandler(w http.ResponseWriter, r *http.Request) {
 
 		var label string
 		var dataJSON []byte
-		query := "SELECT label, data FROM link WHERE linkdID = ?"
+		query := "SELECT label, data FROM link WHERE linkID = ?"
 		row := conn.QueryRowContext(r.Context(), query, id)
 		if err := row.Scan(&label, &dataJSON); err != nil {
 			if err == sql.ErrNoRows {
